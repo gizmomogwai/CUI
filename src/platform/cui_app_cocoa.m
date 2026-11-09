@@ -266,6 +266,15 @@ static void cui__mac_menu(void) {
     [NSApp setWindowsMenu:winMenu];
 }
 
+/* A borderless NSWindow refuses key/main status by default, which would
+ * leave it without keyboard input. */
+@interface CUIBorderlessWindow : NSWindow
+@end
+@implementation CUIBorderlessWindow
+- (BOOL)canBecomeKeyWindow { return YES; }
+- (BOOL)canBecomeMainWindow { return YES; }
+@end
+
 bool cui__plat_init(cui_app *app) {
     @autoreleasepool {
         [NSApplication sharedApplication];
@@ -275,10 +284,14 @@ bool cui__plat_init(cui_app *app) {
         CUIPlat *p = [[CUIPlat alloc] init];
         p.app = app;
         p.cursor = CUI_CURSOR_ARROW;
-        NSWindowStyleMask style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable;
+        bool borderless = app->desc.borderless;
+        NSWindowStyleMask style = borderless ? NSWindowStyleMaskBorderless
+                                             : NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable;
         if (!app->desc.fixed_size) style |= NSWindowStyleMaskResizable;
         NSRect frame = NSMakeRect(0, 0, app->desc.width, app->desc.height);
-        NSWindow *w = [[NSWindow alloc] initWithContentRect:frame styleMask:style backing:NSBackingStoreBuffered defer:NO];
+        Class windowClass = borderless ? [CUIBorderlessWindow class] : [NSWindow class];
+        NSWindow *w = [[windowClass alloc] initWithContentRect:frame styleMask:style backing:NSBackingStoreBuffered defer:NO];
+        if (borderless) w.hasShadow = YES;
         w.releasedWhenClosed = NO;
         w.title = [NSString stringWithUTF8String:app->title];
         w.contentMinSize = NSMakeSize(app->desc.min_width, app->desc.min_height);
