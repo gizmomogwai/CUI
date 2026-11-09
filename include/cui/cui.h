@@ -1789,6 +1789,12 @@ CUI_API void cui_number_roll_ex(cui_ctx *ui, const char *id, const char *text, c
 typedef struct cui_gradient_text_opts { int _; cui_font font; float size; cui_color from, to; bool animate; cui_size width; } cui_gradient_text_opts;
 CUI_API void cui_gradient_text_ex(cui_ctx *ui, const char *text, const cui_gradient_text_opts *opts);
 
+/* Text with byte ranges [start, end) drawn in the highlight color (search matches).
+ * A line that is too narrow gets one ellipsis at its end. */
+typedef struct cui_highlight_range { int start, end; } cui_highlight_range;
+typedef struct cui_highlight_text_opts { int _; cui_font font; float size; cui_color color, highlight; cui_size width; } cui_highlight_text_opts;
+CUI_API void cui_highlight_text_ex(cui_ctx *ui, const char *text, const cui_highlight_range *ranges, int count, const cui_highlight_text_opts *opts);
+
 /* Spotlight card: a soft light follows the pointer across the card and lights
  * the nearest stretch of its border. beam sends a light around the edge. */
 typedef struct cui_spotlight_opts { int _; cui_size width, height; float pad, gap; cui_color color; bool beam; } cui_spotlight_opts;

@@ -413,6 +413,42 @@ void cui_gradient_text_ex(cui_ctx *ui, const char *text, const cui_gradient_text
 }
 
 /* ------------------------------------------------------------------------ */
+/* Highlighted text                                                         */
+/* ------------------------------------------------------------------------ */
+
+typedef struct { const cui_highlight_range *ranges; int count; cui_color color; } cui__hl_fx;
+
+static cui_color cui__fx_highlight(cui_ctx *ui, void *data, int byte, float x, float line_y, float *dy, cui_color c) {
+    (void)ui; (void)x; (void)line_y; (void)dy;
+    const cui__hl_fx *p = data;
+    for (int k = 0; k < p->count; k++) {
+        if (byte >= p->ranges[k].start && byte < p->ranges[k].end) return p->color;
+    }
+    return c;
+}
+
+/* One text node, so a long line gets a single ellipsis at its end. */
+void cui_highlight_text_ex(cui_ctx *ui, const char *text, const cui_highlight_range *ranges, int count, const cui_highlight_text_opts *o) {
+    cui_highlight_text_opts d;
+    memset(&d, 0, sizeof d);
+    if (!o) o = &d;
+    cui_color base = cui__color_set(o->color) ? cui_color_of(ui, o->color) : CUI_C(ui, FOREGROUND);
+    cui_text_fx_opts to;
+    memset(&to, 0, sizeof to);
+    to.font = o->font; to.size = o->size; to.width = o->width; to.nowrap = true;
+    int i = cui__fx_text_node(ui, text, &to, base);
+    if (count <= 0 || !ranges) return;
+    cui_highlight_range *copy = cui__frame_alloc(ui, sizeof(cui_highlight_range) * (size_t)count);
+    memcpy(copy, ranges, sizeof(cui_highlight_range) * (size_t)count);
+    cui__hl_fx *p = cui__frame_alloc(ui, sizeof *p);
+    p->ranges = copy;
+    p->count = count;
+    p->color = cui__color_set(o->highlight) ? cui_color_of(ui, o->highlight) : cui__mo_accent(ui);
+    ui->nodes[i].text_fx = cui__fx_highlight;
+    ui->nodes[i].text_fx_data = p;
+}
+
+/* ------------------------------------------------------------------------ */
 /* Spotlight card                                                           */
 /* ------------------------------------------------------------------------ */
 
