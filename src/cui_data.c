@@ -276,6 +276,13 @@ void cui_virtual_list_begin(cui_ctx *ui, const char *id_str, int count, float ro
 }
 
 void cui_virtual_list_end(cui_ctx *ui) {
+    if (ui->vl_depth > 0) {
+        /* Every row fills its row_h slot: a row of any other height would shift all rows
+           below it away from the offsets the spacers and the visible range assume. */
+        float row_h = ui->vl_stack[ui->vl_depth - 1].row_h;
+        for (int c = ui->nodes[cui__current(ui)].first; c >= 0; c = ui->nodes[c].next)
+            ui->nodes[c].h = CUI_PX(row_h);
+    }
     cui__close(ui);
     if (ui->vl_depth > 0) {
         cui__vlist_build *vb = &ui->vl_stack[--ui->vl_depth];

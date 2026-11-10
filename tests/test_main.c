@@ -2488,6 +2488,33 @@ static void test_virtual_list(void) {
     cui_destroy(ui);
 }
 
+typedef struct { int first, last; cui_rect row0, row5; } vl_height_ctx;
+static void build_vlist_short_rows(cui_ctx *ui, void *u) {
+    vl_height_ctx *v = u;
+    cui_virtual_list(ui, "vl", 100, 20, CUI_PX(200), &v->first, &v->last) {
+        for (int i = v->first; i < v->last; i++) {
+            char id[16];
+            snprintf(id, sizeof id, "row%d", i);
+            cui_id row = cui_row_begin(ui, &(cui_box){ .id = id, .height = CUI_PX(14) });
+            cui_textf(ui, "Row %d", i);
+            cui_box_end(ui);
+            if (i == 0) v->row0 = cui_get_rect(ui, row);
+            if (i == 5) v->row5 = cui_get_rect(ui, row);
+        }
+    }
+}
+
+static void test_virtual_list_row_height(void) {
+    printf("data: virtual list rows fill their row height\n");
+    cui_ctx *ui = new_ctx();
+    vl_height_ctx v;
+    memset(&v, 0, sizeof v);
+    run(ui, build_vlist_short_rows, &v, 3);
+    CHECK(v.row0.h == 20);
+    CHECK(v.row5.y - v.row0.y == 5 * 20);
+    cui_destroy(ui);
+}
+
 /* theme ----------------------------------------------------------------- */
 
 static void build_empty(cui_ctx *ui, void *u) { (void)u; cui_text(ui, "x"); }
@@ -7140,6 +7167,7 @@ int main(void) {
     test_chrome();
     test_dock();
     test_virtual_list();
+    test_virtual_list_row_height();
     test_theme();
     test_renderer();
     test_scroll_fade();
